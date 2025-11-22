@@ -2,7 +2,7 @@
 <html>
 <head>
     <link rel="stylesheet" href="style.css">
-    <title>Link Stats</title>
+    <title>TinyLink Stats</title>
 </head>
 <body>
 
@@ -11,12 +11,14 @@
 <div id="stats"></div>
 
 <script>
-// Read ?code=XYZ
+const BASE_URL = "https://tinylink-77ax.onrender.com";
+
+// Read ?code=XYZ from URL
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
 
 async function loadStats() {
-    const res = await fetch(`http://localhost:3000/api/links/${code}`);
+    const res = await fetch(`${BASE_URL}/api/links/${code}`);
     const data = await res.json();
 
     document.getElementById("stats").innerHTML = `
