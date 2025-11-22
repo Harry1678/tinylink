@@ -1,16 +1,22 @@
+
+
 // src/index.js
 
 const express = require("express");
-const cors = require("cors"); // to allow frontend from other origins
+const cors = require("cors");
+const { Pool } = require("pg"); // Postgres client
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// In-memory store for URLs
-// Structure: { id: { originalUrl, clicks, last_clicked } }
-const urls = {};
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // required for Neon
+});
+
+// Generate random short code
 const generateId = () => Math.random().toString(36).substring(2, 8);
 
 // Health check
@@ -18,49 +24,70 @@ app.get("/healthz", (req, res) => {
   res.json({ ok: true, version: "1.0" });
 });
 
-// List all short URLs
-app.get("/api/links", (req, res) => {
-  const allLinks = Object.keys(urls).map(id => ({
-    code: id,
-    target_url: urls[id].originalUrl,
-    clicks: urls[id].clicks,
-    last_clicked: urls[id].last_clicked
-  }));
-  res.json(allLinks);
+// List all links
+app.get("/api/links", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT code, target_url, clicks, last_clicked FROM links WHERE deleted = false ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // Create short URL
-app.post("/api/shorten", (req, res) => {
+app.post("/api/shorten", async (req, res) => {
   const { originalUrl } = req.body;
   if (!originalUrl) return res.status(400).json({ error: "originalUrl is required" });
 
-  const id = generateId();
-  urls[id] = { originalUrl, clicks: 0, last_clicked: null };
+  const code = generateId();
+  try {
+    await pool.query(
+      "INSERT INTO links(code, target_url) VALUES($1, $2)",
+      [code, originalUrl]
+    );
 
-  const BASE_URL = (process.env.BASE_URL || "https://tinylink-77ax.onrender.com").trim();
+    const BASE_URL = (process.env.BASE_URL || "https://tinylink-77ax.onrender.com").trim();
 
-  res.json({
-    originalUrl,
-    shortUrl: `${BASE_URL}/${id}`
-  });
+    res.json({
+      originalUrl,
+      shortUrl: `${BASE_URL}/${code}`
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // Redirect short URL
-app.get("/:id", (req, res) => {
-  const { id } = req.params;
-  const link = urls[id];
-  if (!link) return res.status(404).send("Short URL not found");
+app.get("/:code", async (req, res) => {
+  const { code } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT target_url, clicks FROM links WHERE code = $1 AND deleted = false",
+      [code]
+    );
 
-  // Update clicks and last clicked
-  link.clicks++;
-  link.last_clicked = new Date().toISOString();
+    if (result.rows.length === 0) return res.status(404).send("Short URL not found");
 
-  res.redirect(link.originalUrl);
+    const link = result.rows[0];
+
+    // Update clicks and last_clicked
+    await pool.query(
+      "UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1",
+      [code]
+    );
+
+    res.redirect(link.target_url);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Database error");
+  }
 });
 
 // Start server
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log("🚀 index.js loaded successfully");
+  console.log("🚀 TinyLink backend loaded successfully");
 });
