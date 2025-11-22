@@ -28,7 +28,8 @@ app.post("/api/shorten", (req, res) => {
   const id = generateId();
   urls[id] = originalUrl;
 
-  const BASE_URL = process.env.BASE_URL || `https://tinylink-77ax.onrender.com`;
+  const BASE_URL = (process.env.BASE_URL || "https://tinylink-77ax.onrender.com").trim();
+
 
   res.json({
     originalUrl,
