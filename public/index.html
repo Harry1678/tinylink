@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <title>TinyLink Dashboard</title>
+</head>
+<body>
+
+<h1>TinyLink Dashboard</h1>
+
+<h3>Create a Short Link</h3>
+<input id="url" type="text" placeholder="Enter long URL">
+<button onclick="createLink()">Create</button>
+
+<p id="result"></p>
+
+<h2>Your Links</h2>
+<table id="linksTable" border="1" style="width:600px;">
+    <tr>
+        <th>Code</th>
+        <th>URL</th>
+        <th>Clicks</th>
+        <th>Actions</th>
+    </tr>
+</table>
+
+<script>
+async function fetchLinks() {
+    const res = await fetch("http://localhost:3000/api/links");
+    const data = await res.json();
+
+    const table = document.getElementById("linksTable");
+
+    // Clear old rows except header
+    table.innerHTML = `
+        <tr>
+            <th>Code</th>
+            <th>URL</th>
+            <th>Clicks</th>
+            <th>Actions</th>
+        </tr>
+    `;
+
+    data.forEach(link => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${link.code}</td>
+            <td>${link.target_url}</td>
+            <td>${link.clicks}</td>
+            <td>
+                <a href="http://localhost:3000/${link.code}" target="_blank">Open</a> |
+                <a href="stats.html?code=${link.code}">Stats</a> |
+                <button onclick="deleteLink('${link.code}')">Delete</button>
+            </td>
+        `;
+        table.appendChild(row);
+    });
+}
+
+async function createLink() {
+    const target_url = document.getElementById('url').value;
+
+    const response = await fetch("http://localhost:3000/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_url })
+    });
+
+    const data = await response.json();
+    document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+    fetchLinks(); // Refresh table
+}
+
+async function deleteLink(code) {
+    await fetch(`http://localhost:3000/api/links/${code}`, {
+        method: "DELETE"
+    });
+    fetchLinks();
+}
+
+fetchLinks();
+</script>
+
+</body>
+</html>

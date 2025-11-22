@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Create Short Link</h2>
+
+<input id="url" type="text" value="https://google.com" style="width:300px;">
+<button onclick="createLink()">Create</button>
+
+<p id="result"></p>
+
+<script>
+async function createLink() {
+  const target_url = document.getElementById('url').value;
+
+  const response = await fetch("http://localhost:3000/api/links", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target_url })
+  });
+
+  const data = await response.json();
+  document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+}
+</script>
+
+</body>
+</html>
