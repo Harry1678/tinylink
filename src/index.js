@@ -45,7 +45,9 @@ app.get("/api/links/:code", async (req, res) => {
       "SELECT code, target_url, clicks, last_clicked FROM links WHERE code = $1 AND deleted = false",
       [code]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "Link not found" });
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Link not found" });
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -60,8 +62,13 @@ app.post("/api/links", async (req, res) => {
   if (!target_url)
     return res.status(400).json({ error: "target_url is required" });
 
-  if (!target_url.startsWith("http://") && !target_url.startsWith("https://")) {
-    return res.status(400).json({ error: "Invalid URL. Must start with http:// or https://"});
+  if (
+    !target_url.startsWith("http://") &&
+    !target_url.startsWith("https://")
+  ) {
+    return res.status(400).json({
+      error: "Invalid URL. Must start with http:// or https://",
+    });
   }
 
   let finalCode = code || generateId();
@@ -70,25 +77,31 @@ app.post("/api/links", async (req, res) => {
   if (code) {
     const codeRegex = /^[A-Za-z0-9]{6,8}$/;
     if (!codeRegex.test(code)) {
-      return res.status(400).json({ error: "Custom code must be 6–8 alphanumeric characters" });
+      return res.status(400).json({
+        error: "Custom code must be 6–8 alphanumeric characters",
+      });
     }
   }
 
   try {
-    const exists = await pool.query("SELECT 1 FROM links WHERE code = $1", [finalCode]);
-    if (exists.rows.length > 0) return res.status(409).json({ error: "Code already exists" });
+    const exists = await pool.query("SELECT 1 FROM links WHERE code = $1", [
+      finalCode,
+    ]);
+    if (exists.rows.length > 0)
+      return res.status(409).json({ error: "Code already exists" });
 
     await pool.query(
       "INSERT INTO links(code, target_url) VALUES($1, $2)",
       [finalCode, target_url]
     );
 
-    const BASE_URL = process.env.BASE_URL || "https://tinylink-77ax.onrender.com";
+    // FIX: Trim Base URL to remove hidden \n or spaces
+    const cleanBaseUrl = (process.env.BASE_URL || "").trim();
 
     res.json({
       code: finalCode,
       target_url,
-      shortUrl: `${BASE_URL}/${finalCode}`
+      shortUrl: `${cleanBaseUrl}/${finalCode}`,
     });
   } catch (err) {
     console.error(err);
@@ -116,12 +129,12 @@ app.delete("/api/links/:code", async (req, res) => {
   }
 });
 
-// Serve stats page — REQUIRED BY SPEC
+// Stats page route — REQUIRED BY SPEC
 app.get("/code/:code", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/stats.html"));
 });
 
-// Redirect
+// Redirect route
 app.get("/:code", async (req, res) => {
   const { code } = req.params;
 
@@ -131,7 +144,8 @@ app.get("/:code", async (req, res) => {
       [code]
     );
 
-    if (result.rows.length === 0) return res.status(404).send("Short URL not found");
+    if (result.rows.length === 0)
+      return res.status(404).send("Short URL not found");
 
     await pool.query(
       "UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1",
