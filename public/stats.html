@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>TinyLink Stats</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -32,7 +32,8 @@ async function loadStats() {
     const data = await res.json();
 
     if (!res.ok) {
-        document.getElementById("stats").innerHTML = "<p>❌ Link not found.</p>";
+        document.getElementById("stats").innerHTML =
+            "<p>❌ Link not found.</p>";
         return;
     }
 

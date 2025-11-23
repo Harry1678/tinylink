@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>TinyLink Dashboard</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -60,7 +60,10 @@ async function fetchLinks() {
     table.innerHTML = "";
 
     if (data.length === 0) {
-        table.innerHTML = `<tr><td colspan="5" style="text-align:center;">No links created yet.</td></tr>`;
+        table.innerHTML = `
+            <tr><td colspan="5" style="text-align:center;">
+                No links created yet.
+            </td></tr>`;
         return;
     }
 
@@ -79,7 +82,9 @@ async function fetchLinks() {
             <td>
                 <a href="/${link.code}" target="_blank">Open</a> |
                 <a href="/code/${link.code}">Stats</a> |
-                <span class="delete-btn" onclick="deleteLink('${link.code}')">Delete</span>
+                <span class="delete-btn" onclick="deleteLink('${link.code}')">
+                    Delete
+                </span>
             </td>
         `;
 
@@ -110,13 +115,16 @@ async function createLink() {
         return;
     }
 
-    document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+    document.getElementById("result").innerText =
+        JSON.stringify(data, null, 2);
 
     fetchLinks();
 }
 
 async function deleteLink(code) {
-    await fetch(`${BASE_URL}/api/links/${code}`, { method: "DELETE" });
+    await fetch(`${BASE_URL}/api/links/${code}`, {
+        method: "DELETE"
+    });
     fetchLinks();
 }
 
