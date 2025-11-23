@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,12 +6,12 @@
 <title>TinyLink Stats</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 min-h-screen font-sans flex items-center justify-center">
+<body class="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 min-h-screen flex items-center justify-center font-sans">
 
-<div class="bg-white p-8 rounded-xl shadow w-full max-w-md">
-    <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">Link Statistics</h1>
+<div class="bg-white bg-opacity-90 p-8 rounded-xl shadow-lg w-full max-w-md backdrop-blur-sm">
+    <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">Link Stats</h1>
     <div id="stats" class="space-y-3 text-gray-700"></div>
-    <button onclick="window.location='index.html'" class="mt-6 w-full bg-indigo-600 text-white py-3 rounded hover:bg-indigo-700 transition font-semibold">Back to Dashboard</button>
+    <button onclick="window.location='index.html'" class="mt-6 w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold">Back</button>
 </div>
 
 <script>
@@ -23,7 +24,7 @@ async function loadStats() {
     const data = await res.json();
     document.getElementById("stats").innerHTML = `
         <p><b>Short Code:</b> <span class="font-mono">${data.code}</span></p>
-        <p><b>Original URL:</b> <a href="${data.target_url}" class="text-blue-600 hover:underline" target="_blank">${data.target_url}</a></p>
+        <p><b>Original URL:</b> <a href="${data.target_url}" target="_blank" class="text-blue-600 hover:underline">${data.target_url}</a></p>
         <p><b>Total Clicks:</b> ${data.clicks}</p>
         <p><b>Last Clicked:</b> ${data.last_clicked ? data.last_clicked : "Never"}</p>
     `;
@@ -31,6 +32,5 @@ async function loadStats() {
 
 loadStats();
 </script>
-
 </body>
 </html>
