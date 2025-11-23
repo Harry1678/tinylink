@@ -59,6 +59,11 @@ async function fetchLinks() {
     const table = document.getElementById("linksTable");
     table.innerHTML = "";
 
+    if (data.length === 0) {
+        table.innerHTML = `<tr><td colspan="5" style="text-align:center;">No links created yet.</td></tr>`;
+        return;
+    }
+
     data.forEach(link => {
         const row = document.createElement("tr");
 
@@ -72,8 +77,8 @@ async function fetchLinks() {
             <td>${link.clicks}</td>
             <td>${link.last_clicked || "Never"}</td>
             <td>
-                <a href="${BASE_URL}/${link.code}" target="_blank">Open</a> |
-                <a href="stats.html?code=${link.code}">Stats</a> |
+                <a href="/${link.code}" target="_blank">Open</a> |
+                <a href="/code/${link.code}">Stats</a> |
                 <span class="delete-btn" onclick="deleteLink('${link.code}')">Delete</span>
             </td>
         `;
@@ -86,6 +91,12 @@ async function createLink() {
     const target_url = document.getElementById('url').value;
     const code = document.getElementById('customCode').value || undefined;
 
+    if (!target_url.startsWith("http://") && !target_url.startsWith("https://")) {
+        document.getElementById("result").innerText =
+            "❌ Invalid URL. Must start with http:// or https://";
+        return;
+    }
+
     const response = await fetch(`${BASE_URL}/api/links`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,7 +104,14 @@ async function createLink() {
     });
 
     const data = await response.json();
+
+    if (!response.ok) {
+        document.getElementById("result").innerText = "❌ " + data.error;
+        return;
+    }
+
     document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+
     fetchLinks();
 }
 

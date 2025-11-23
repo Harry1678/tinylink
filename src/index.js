@@ -4,7 +4,6 @@ const { Pool } = require("pg");
 const path = require("path");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -14,10 +13,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 
-// Serve frontend
+// Serve public folder
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Generate random code
+// Generate random short code
 const generateId = () => Math.random().toString(36).substring(2, 8);
 
 // Health check
@@ -58,7 +57,12 @@ app.get("/api/links/:code", async (req, res) => {
 app.post("/api/links", async (req, res) => {
   const { target_url, code } = req.body;
 
-  if (!target_url) return res.status(400).json({ error: "target_url is required" });
+  if (!target_url)
+    return res.status(400).json({ error: "target_url is required" });
+
+  if (!target_url.startsWith("http://") && !target_url.startsWith("https://")) {
+    return res.status(400).json({ error: "Invalid URL. Must start with http:// or https://"});
+  }
 
   let finalCode = code || generateId();
 
@@ -66,7 +70,7 @@ app.post("/api/links", async (req, res) => {
   if (code) {
     const codeRegex = /^[A-Za-z0-9]{6,8}$/;
     if (!codeRegex.test(code)) {
-      return res.status(400).json({ error: "Custom code must be 6-8 alphanumeric characters" });
+      return res.status(400).json({ error: "Custom code must be 6–8 alphanumeric characters" });
     }
   }
 
@@ -74,10 +78,10 @@ app.post("/api/links", async (req, res) => {
     const exists = await pool.query("SELECT 1 FROM links WHERE code = $1", [finalCode]);
     if (exists.rows.length > 0) return res.status(409).json({ error: "Code already exists" });
 
-    await pool.query("INSERT INTO links(code, target_url) VALUES($1, $2)", [
-      finalCode,
-      target_url
-    ]);
+    await pool.query(
+      "INSERT INTO links(code, target_url) VALUES($1, $2)",
+      [finalCode, target_url]
+    );
 
     const BASE_URL = process.env.BASE_URL || "https://tinylink-77ax.onrender.com";
 
@@ -105,11 +109,16 @@ app.delete("/api/links/:code", async (req, res) => {
     if (result.rows.length === 0)
       return res.status(404).json({ error: "Link not found" });
 
-    res.json({ message: "Link deleted successfully", code });
+    res.json({ message: "Link deleted", code });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
   }
+});
+
+// Serve stats page — REQUIRED BY SPEC
+app.get("/code/:code", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/stats.html"));
 });
 
 // Redirect
@@ -124,9 +133,10 @@ app.get("/:code", async (req, res) => {
 
     if (result.rows.length === 0) return res.status(404).send("Short URL not found");
 
-    await pool.query("UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1", [
-      code
-    ]);
+    await pool.query(
+      "UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1",
+      [code]
+    );
 
     res.redirect(result.rows[0].target_url);
   } catch (err) {
@@ -135,9 +145,8 @@ app.get("/:code", async (req, res) => {
   }
 });
 
-// Start
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log("🚀 TinyLink backend loaded successfully");
+  console.log("🚀 TinyLink backend is live");
 });

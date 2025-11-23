@@ -13,18 +13,28 @@
 <div class="wrapper">
     <div class="card">
         <div id="stats"></div>
-        <button onclick="window.location='index.html'">Back</button>
+        <button onclick="window.location='/'">Back</button>
     </div>
 </div>
 
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
-const params = new URLSearchParams(window.location.search);
-const code = params.get("code");
+
+// SUPPORT BOTH: /code/:code AND stats.html?code=...
+let code = new URLSearchParams(window.location.search).get("code");
+if (!code) {
+    const parts = window.location.pathname.split("/");
+    code = parts[parts.length - 1];
+}
 
 async function loadStats() {
     const res = await fetch(`${BASE_URL}/api/links/${code}`);
     const data = await res.json();
+
+    if (!res.ok) {
+        document.getElementById("stats").innerHTML = "<p>❌ Link not found.</p>";
+        return;
+    }
 
     document.getElementById("stats").innerHTML = `
         <p><b>Short Code:</b> ${data.code}</p>
