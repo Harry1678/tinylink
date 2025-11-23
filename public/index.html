@@ -54,6 +54,7 @@
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
 
+// Load all links in table
 async function fetchLinks() {
     const res = await fetch(`${BASE_URL}/api/links`);
     const data = await res.json();
@@ -79,14 +80,15 @@ async function fetchLinks() {
     });
 }
 
+// Create short URL
 async function createLink() {
-    const target_url = document.getElementById('url').value;
-    const custom_code = document.getElementById('customCode').value || undefined;
+    const originalUrl = document.getElementById('url').value;
+    const customCode = document.getElementById('customCode').value || undefined;
 
-    const response = await fetch(`${BASE_URL}/api/links`, {
+    const response = await fetch(`${BASE_URL}/api/shorten`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target_url, code: custom_code })
+        body: JSON.stringify({ originalUrl, code: customCode })
     });
 
     const data = await response.json();
@@ -95,6 +97,7 @@ async function createLink() {
     fetchLinks();
 }
 
+// Delete link
 async function deleteLink(code) {
     await fetch(`${BASE_URL}/api/links/${code}`, {
         method: "DELETE"
