@@ -15,7 +15,6 @@
 
 <div class="wrapper">
 
-    <!-- CARD 1: Create Short Link -->
     <div class="card">
         <h2>Create a Short Link</h2>
 
@@ -27,16 +26,16 @@
         <pre id="result"></pre>
     </div>
 
-    <!-- CARD 2: Links Table -->
     <div class="card">
         <h2>Your Links</h2>
 
         <table>
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>URL</th>
+                    <th>Short Code</th>
+                    <th>Target URL</th>
                     <th>Clicks</th>
+                    <th>Last Clicked</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -54,12 +53,10 @@
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
 
-// Load all links in table
 async function fetchLinks() {
     const res = await fetch(`${BASE_URL}/api/links`);
     const data = await res.json();
     const table = document.getElementById("linksTable");
-
     table.innerHTML = "";
 
     data.forEach(link => {
@@ -67,8 +64,13 @@ async function fetchLinks() {
 
         row.innerHTML = `
             <td>${link.code}</td>
-            <td>${link.target_url}</td>
+            <td title="${link.target_url}">
+                ${link.target_url.length > 45 
+                    ? link.target_url.substring(0,45) + "..." 
+                    : link.target_url}
+            </td>
             <td>${link.clicks}</td>
+            <td>${link.last_clicked || "Never"}</td>
             <td>
                 <a href="${BASE_URL}/${link.code}" target="_blank">Open</a> |
                 <a href="stats.html?code=${link.code}">Stats</a> |
@@ -80,29 +82,23 @@ async function fetchLinks() {
     });
 }
 
-// Create short URL
 async function createLink() {
-    const originalUrl = document.getElementById('url').value;
-    const customCode = document.getElementById('customCode').value || undefined;
+    const target_url = document.getElementById('url').value;
+    const code = document.getElementById('customCode').value || undefined;
 
-    const response = await fetch(`${BASE_URL}/api/shorten`, {
+    const response = await fetch(`${BASE_URL}/api/links`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ originalUrl, code: customCode })
+        body: JSON.stringify({ target_url, code })
     });
 
     const data = await response.json();
     document.getElementById("result").innerText = JSON.stringify(data, null, 2);
-
     fetchLinks();
 }
 
-// Delete link
 async function deleteLink(code) {
-    await fetch(`${BASE_URL}/api/links/${code}`, {
-        method: "DELETE"
-    });
-
+    await fetch(`${BASE_URL}/api/links/${code}`, { method: "DELETE" });
     fetchLinks();
 }
 

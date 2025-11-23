@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<title>TinyLink — Stats</title>
-<link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>TinyLink Stats</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -11,27 +11,14 @@
 <h1>Link Statistics</h1>
 
 <div class="wrapper">
-
     <div class="card">
-        <h2>Link Details</h2>
-
-        <div id="stats" style="font-size:18px;"></div>
-
-        <button style="margin-top:20px;" onclick="window.location='index.html'">
-            Back to Dashboard
-        </button>
+        <div id="stats"></div>
+        <button onclick="window.location='index.html'">Back</button>
     </div>
-
 </div>
-
-<footer>
-    © 2025 TinyLink — Made with ❤️
-</footer>
 
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
-
-// Get ?code=abc123 from URL
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
 
@@ -40,12 +27,10 @@ async function loadStats() {
     const data = await res.json();
 
     document.getElementById("stats").innerHTML = `
-        <p><strong>Short Code:</strong> ${data.code}</p>
-        <p><strong>Original URL:</strong> 
-            <a href="${data.target_url}" target="_blank">${data.target_url}</a>
-        </p>
-        <p><strong>Total Clicks:</strong> ${data.clicks}</p>
-        <p><strong>Last Clicked:</strong> ${data.last_clicked || "Never"}</p>
+        <p><b>Short Code:</b> ${data.code}</p>
+        <p><b>Original URL:</b> ${data.target_url}</p>
+        <p><b>Total Clicks:</b> ${data.clicks}</p>
+        <p><b>Last Clicked:</b> ${data.last_clicked || "Never"}</p>
     `;
 }
 
