@@ -1,10 +1,6 @@
-
-
-// src/index.js
-
 const express = require("express");
 const cors = require("cors");
-const { Pool } = require("pg"); // Postgres client
+const { Pool } = require("pg");
 const app = express();
 
 app.use(cors());
@@ -13,7 +9,9 @@ app.use(express.json());
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // required for Neon
+  ssl: process.env.NODE_ENV === "production"
+       ? { rejectUnauthorized: false }
+       : false
 });
 
 // Generate random short code
@@ -27,7 +25,9 @@ app.get("/healthz", (req, res) => {
 // List all links
 app.get("/api/links", async (req, res) => {
   try {
-    const result = await pool.query("SELECT code, target_url, clicks, last_clicked FROM links WHERE deleted = false ORDER BY created_at DESC");
+    const result = await pool.query(
+      "SELECT code, target_url, clicks, last_clicked FROM links WHERE deleted = false ORDER BY created_at DESC"
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -72,7 +72,6 @@ app.get("/:code", async (req, res) => {
 
     const link = result.rows[0];
 
-    // Update clicks and last_clicked
     await pool.query(
       "UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1",
       [code]
