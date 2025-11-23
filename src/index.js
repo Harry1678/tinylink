@@ -90,3 +90,24 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log("🚀 TinyLink backend loaded successfully");
 });
+
+
+// ... all your previous routes like /healthz, /api/links, /api/shorten, /:code
+
+// Test route to check DB
+app.get("/api/testdb", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM links");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Start server
+const port = process.env.PORT || 10000;
+app.listen(port, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log("🚀 TinyLink backend loaded successfully");
+});
