@@ -38,7 +38,7 @@ app.get("/api/links", async (req, res) => {
   }
 });
 
-// Get stats for single code
+// Get stats for a single link
 app.get("/api/links/:code", async (req, res) => {
   const { code } = req.params;
   try {
@@ -46,7 +46,8 @@ app.get("/api/links/:code", async (req, res) => {
       "SELECT code, target_url, clicks, last_clicked FROM links WHERE code = $1 AND deleted = false",
       [code]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "Link not found" });
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Link not found" });
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -54,55 +55,48 @@ app.get("/api/links/:code", async (req, res) => {
   }
 });
 
-// Create short URL with optional custom code
-app.post("/api/shorten", async (req, res) => {
-  const { originalUrl, customCode } = req.body;
+// Create short URL (CORRECT route for assignment)
+app.post("/api/links", async (req, res) => {
+  const { target_url, code } = req.body;
 
-  if (!originalUrl) return res.status(400).json({ error: "originalUrl is required" });
+  if (!target_url)
+    return res.status(400).json({ error: "target_url is required" });
 
-  let code = customCode || generateId();
-  if (customCode) {
+  const shortCode = code || generateId();
+
+  // Validate custom code if provided
+  if (code) {
     const codeRegex = /^[A-Za-z0-9]{6,8}$/;
-    if (!codeRegex.test(customCode)) {
-      return res.status(400).json({ error: "Custom code must be 6-8 alphanumeric characters" });
+    if (!codeRegex.test(code)) {
+      return res
+        .status(400)
+        .json({ error: "Custom code must be 6-8 alphanumeric characters" });
     }
   }
 
   try {
+    // Check if code already exists
     const exists = await pool.query(
       "SELECT 1 FROM links WHERE code = $1 AND deleted = false",
-      [code]
+      [shortCode]
     );
-    if (exists.rows.length > 0) return res.status(409).json({ error: "Code already exists" });
 
-    await pool.query("INSERT INTO links(code, target_url) VALUES($1, $2)", [code, originalUrl]);
-    const BASE_URL = process.env.BASE_URL || "https://tinylink-77ax.onrender.com";
+    if (exists.rows.length > 0)
+      return res.status(409).json({ error: "Code already exists" });
 
-    res.json({ originalUrl, shortUrl: `${BASE_URL}/${code}` });
+    await pool.query(
+      "INSERT INTO links(code, target_url) VALUES($1, $2)",
+      [shortCode, target_url]
+    );
+
+    res.json({
+      code: shortCode,
+      target_url
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
-  }
-});
-
-// Redirect short URL
-app.get("/:code", async (req, res) => {
-  const { code } = req.params;
-  try {
-    const result = await pool.query(
-      "SELECT target_url, clicks FROM links WHERE code = $1 AND deleted = false",
-      [code]
-    );
-
-    if (result.rows.length === 0) return res.status(404).send("Short URL not found");
-
-    const link = result.rows[0];
-    await pool.query("UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1", [code]);
-
-    res.redirect(link.target_url);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Database error");
   }
 });
 
@@ -114,7 +108,8 @@ app.delete("/api/links/:code", async (req, res) => {
       "UPDATE links SET deleted = true WHERE code = $1 AND deleted = false RETURNING *",
       [code]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "Link not found" });
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Link not found" });
     res.json({ message: "Link deleted successfully", code });
   } catch (err) {
     console.error(err);
@@ -122,7 +117,34 @@ app.delete("/api/links/:code", async (req, res) => {
   }
 });
 
-// Test DB connection
+// Redirect
+app.get("/:code", async (req, res) => {
+  const { code } = req.params;
+
+  try {
+    const result = await pool.query(
+      "SELECT target_url FROM links WHERE code = $1 AND deleted = false",
+      [code]
+    );
+
+    if (result.rows.length === 0)
+      return res.status(404).send("Short URL not found");
+
+    // Update clicks
+    await pool.query(
+      "UPDATE links SET clicks = clicks + 1, last_clicked = now() WHERE code = $1",
+      [code]
+    );
+
+    res.redirect(result.rows[0].target_url);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Database error");
+  }
+});
+
+// Test DB
 app.get("/api/testdb", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM links");
