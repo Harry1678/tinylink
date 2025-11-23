@@ -25,7 +25,10 @@ app.get("/healthz", (req, res) => {
   res.json({ ok: true, version: "1.0" });
 });
 
-// List all links
+
+// ---------------------------
+// LIST ALL LINKS
+// ---------------------------
 app.get("/api/links", async (req, res) => {
   try {
     const result = await pool.query(
@@ -38,24 +41,34 @@ app.get("/api/links", async (req, res) => {
   }
 });
 
-// Get stats for a single link
+
+// ---------------------------
+// STATS FOR SINGLE CODE
+// ---------------------------
 app.get("/api/links/:code", async (req, res) => {
   const { code } = req.params;
+
   try {
     const result = await pool.query(
       "SELECT code, target_url, clicks, last_clicked FROM links WHERE code = $1 AND deleted = false",
       [code]
     );
+
     if (result.rows.length === 0)
       return res.status(404).json({ error: "Link not found" });
+
     res.json(result.rows[0]);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
   }
 });
 
-// Create short URL (CORRECT route for assignment)
+
+// ---------------------------
+// CREATE LINK (correct route for assignment)
+// ---------------------------
 app.post("/api/links", async (req, res) => {
   const { target_url, code } = req.body;
 
@@ -64,7 +77,7 @@ app.post("/api/links", async (req, res) => {
 
   const shortCode = code || generateId();
 
-  // Validate custom code if provided
+  // Validate custom code
   if (code) {
     const codeRegex = /^[A-Za-z0-9]{6,8}$/;
     if (!codeRegex.test(code)) {
@@ -84,6 +97,7 @@ app.post("/api/links", async (req, res) => {
     if (exists.rows.length > 0)
       return res.status(409).json({ error: "Code already exists" });
 
+    // Insert new link
     await pool.query(
       "INSERT INTO links(code, target_url) VALUES($1, $2)",
       [shortCode, target_url]
@@ -100,24 +114,34 @@ app.post("/api/links", async (req, res) => {
   }
 });
 
-// Delete a link
+
+// ---------------------------
+// DELETE A LINK
+// ---------------------------
 app.delete("/api/links/:code", async (req, res) => {
   const { code } = req.params;
+
   try {
     const result = await pool.query(
       "UPDATE links SET deleted = true WHERE code = $1 AND deleted = false RETURNING *",
       [code]
     );
+
     if (result.rows.length === 0)
       return res.status(404).json({ error: "Link not found" });
+
     res.json({ message: "Link deleted successfully", code });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
   }
 });
 
-// Redirect
+
+// ---------------------------
+// REDIRECT
+// ---------------------------
 app.get("/:code", async (req, res) => {
   const { code } = req.params;
 
@@ -144,7 +168,10 @@ app.get("/:code", async (req, res) => {
   }
 });
 
-// Test DB
+
+// ---------------------------
+// TEST DB
+// ---------------------------
 app.get("/api/testdb", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM links");
@@ -155,7 +182,10 @@ app.get("/api/testdb", async (req, res) => {
   }
 });
 
-// Start server
+
+// ---------------------------
+// START SERVER
+// ---------------------------
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
