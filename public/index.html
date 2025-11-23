@@ -1,28 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="style.css">
-    <title>TinyLink Dashboard</title>
+<meta charset="UTF-8">
+<title>TinyLink Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen font-sans">
 
-<h1>TinyLink Dashboard</h1>
+<!-- Header -->
+<header class="bg-indigo-600 text-white py-6 shadow">
+    <h1 class="text-center text-4xl font-bold tracking-wide">TinyLink</h1>
+    <p class="text-center text-sm mt-1">Shorten URLs & Track Clicks Easily</p>
+</header>
 
-<h3>Create a Short Link</h3>
-<input id="url" type="text" placeholder="Enter long URL">
-<button onclick="createLink()">Create</button>
+<main class="max-w-5xl mx-auto px-4 py-8">
 
-<p id="result"></p>
+    <!-- Create Link Section -->
+    <section class="bg-white p-6 rounded-lg shadow mb-8">
+        <h2 class="text-2xl font-semibold mb-4 text-indigo-600">Create a Short Link</h2>
+        <div class="flex flex-col md:flex-row gap-3">
+            <input id="url" type="text" placeholder="Enter long URL" class="flex-1 p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input id="customCode" type="text" placeholder="Optional custom code (6-8 chars)" class="p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button onclick="createLink()" class="bg-indigo-600 text-white px-5 py-3 rounded hover:bg-indigo-700 transition font-semibold">Create</button>
+        </div>
+        <pre id="result" class="mt-3 p-2 bg-gray-100 rounded text-gray-700 whitespace-pre-wrap"></pre>
+    </section>
 
-<h2>Your Links</h2>
-<table id="linksTable" border="1" style="width:600px;">
-    <tr>
-        <th>Code</th>
-        <th>URL</th>
-        <th>Clicks</th>
-        <th>Actions</th>
-    </tr>
-</table>
+    <!-- Links Table -->
+    <section class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-2xl font-semibold mb-4 text-indigo-600">Your Links</h2>
+        <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse">
+            <thead>
+                <tr class="bg-indigo-100 text-left">
+                    <th class="p-3 border">Code</th>
+                    <th class="p-3 border">URL</th>
+                    <th class="p-3 border">Clicks</th>
+                    <th class="p-3 border">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="linksTable"></tbody>
+        </table>
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-white py-4 mt-10 text-center">
+    &copy; 2025 TinyLink • Built with ❤️ and Node.js + Tailwind
+</footer>
 
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
@@ -30,29 +57,19 @@ const BASE_URL = "https://tinylink-77ax.onrender.com";
 async function fetchLinks() {
     const res = await fetch(`${BASE_URL}/api/links`);
     const data = await res.json();
-
     const table = document.getElementById("linksTable");
-
-    // Clear old rows except header
-    table.innerHTML = `
-        <tr>
-            <th>Code</th>
-            <th>URL</th>
-            <th>Clicks</th>
-            <th>Actions</th>
-        </tr>
-    `;
-
+    table.innerHTML = "";
     data.forEach(link => {
         const row = document.createElement("tr");
+        row.classList.add("hover:bg-gray-50");
         row.innerHTML = `
-            <td>${link.code}</td>
-            <td>${link.target_url}</td>
-            <td>${link.clicks}</td>
-            <td>
-                <a href="${BASE_URL}/${link.code}" target="_blank">Open</a> |
-                <a href="stats.html?code=${link.code}">Stats</a> |
-                <button onclick="deleteLink('${link.code}')">Delete</button>
+            <td class="p-3 border font-mono">${link.code}</td>
+            <td class="p-3 border truncate max-w-xs" title="${link.target_url}">${link.target_url}</td>
+            <td class="p-3 border text-center">${link.clicks}</td>
+            <td class="p-3 border flex gap-2">
+                <a href="${BASE_URL}/${link.code}" target="_blank" class="text-indigo-600 hover:underline">Open</a>
+                <a href="stats.html?code=${link.code}" class="text-green-600 hover:underline">Stats</a>
+                <button onclick="deleteLink('${link.code}')" class="text-red-600 hover:underline">Delete</button>
             </td>
         `;
         table.appendChild(row);
@@ -60,22 +77,16 @@ async function fetchLinks() {
 }
 
 async function createLink() {
-    const originalUrl = document.getElementById('url').value;
-
-    if (!originalUrl) {
-        alert("Please enter a URL");
-        return;
-    }
-
-    const response = await fetch(`${BASE_URL}/api/shorten`, {
+    const target_url = document.getElementById('url').value;
+    const custom_code = document.getElementById('customCode').value || undefined;
+    const response = await fetch(`${BASE_URL}/api/links`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ originalUrl })
+        body: JSON.stringify({ target_url, code: custom_code })
     });
-
     const data = await response.json();
     document.getElementById("result").innerText = JSON.stringify(data, null, 2);
-    fetchLinks(); // Refresh table
+    fetchLinks();
 }
 
 async function deleteLink(code) {
@@ -83,7 +94,6 @@ async function deleteLink(code) {
     fetchLinks();
 }
 
-// Load links on page load
 fetchLinks();
 </script>
 

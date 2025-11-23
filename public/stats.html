@@ -1,32 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="style.css">
-    <title>TinyLink Stats</title>
+<meta charset="UTF-8">
+<title>TinyLink Stats</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen font-sans flex items-center justify-center">
 
-<h1>TinyLink — Stats</h1>
-
-<div id="stats"></div>
+<div class="bg-white p-8 rounded-xl shadow w-full max-w-md">
+    <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">Link Statistics</h1>
+    <div id="stats" class="space-y-3 text-gray-700"></div>
+    <button onclick="window.location='index.html'" class="mt-6 w-full bg-indigo-600 text-white py-3 rounded hover:bg-indigo-700 transition font-semibold">Back to Dashboard</button>
+</div>
 
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
-
-// Read ?code=XYZ from URL
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
 
 async function loadStats() {
     const res = await fetch(`${BASE_URL}/api/links/${code}`);
     const data = await res.json();
-
     document.getElementById("stats").innerHTML = `
-        <p><b>Short Code:</b> ${data.code}</p>
-        <p><b>Original URL:</b> ${data.target_url}</p>
+        <p><b>Short Code:</b> <span class="font-mono">${data.code}</span></p>
+        <p><b>Original URL:</b> <a href="${data.target_url}" class="text-blue-600 hover:underline" target="_blank">${data.target_url}</a></p>
         <p><b>Total Clicks:</b> ${data.clicks}</p>
         <p><b>Last Clicked:</b> ${data.last_clicked ? data.last_clicked : "Never"}</p>
-        <button onclick="window.location='index.html'">Back</button>
     `;
 }
 
