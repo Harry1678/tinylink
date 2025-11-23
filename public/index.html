@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="utf-8">
     <title>TinyLink Dashboard</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -10,6 +11,7 @@
 
 <h3>Create a Short Link</h3>
 <input id="url" type="text" placeholder="Enter long URL">
+<input id="customCode" type="text" placeholder="Optional custom code (6-8 chars)">
 <button onclick="createLink()">Create</button>
 
 <p id="result"></p>
@@ -27,10 +29,10 @@
 <script>
 const BASE_URL = "https://tinylink-77ax.onrender.com";
 
+// Fetch and display all links
 async function fetchLinks() {
     const res = await fetch(`${BASE_URL}/api/links`);
     const data = await res.json();
-
     const table = document.getElementById("linksTable");
 
     // Clear old rows except header
@@ -47,7 +49,7 @@ async function fetchLinks() {
         const row = document.createElement("tr");
         row.innerHTML = `
             <td>${link.code}</td>
-            <td>${link.target_url}</td>
+            <td><a href="${BASE_URL}/${link.code}" target="_blank">${link.target_url}</a></td>
             <td>${link.clicks}</td>
             <td>
                 <a href="${BASE_URL}/${link.code}" target="_blank">Open</a> |
@@ -59,13 +61,15 @@ async function fetchLinks() {
     });
 }
 
+// Create a new short link
 async function createLink() {
     const target_url = document.getElementById('url').value;
+    const custom_code = document.getElementById('customCode').value.trim();
 
     const response = await fetch(`${BASE_URL}/api/links`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target_url })
+        body: JSON.stringify({ target_url, custom_code: custom_code || undefined })
     });
 
     const data = await response.json();
@@ -73,13 +77,13 @@ async function createLink() {
     fetchLinks(); // Refresh table
 }
 
+// Delete a link
 async function deleteLink(code) {
-    await fetch(`${BASE_URL}/api/links/${code}`, {
-        method: "DELETE"
-    });
+    await fetch(`${BASE_URL}/api/links/${code}`, { method: "DELETE" });
     fetchLinks();
 }
 
+// Load links on page load
 fetchLinks();
 </script>
 

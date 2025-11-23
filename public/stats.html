@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="utf-8">
     <title>TinyLink Stats</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -17,15 +18,22 @@ const BASE_URL = "https://tinylink-77ax.onrender.com";
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
 
+// Load stats for the code
 async function loadStats() {
     const res = await fetch(`${BASE_URL}/api/links/${code}`);
+    if (res.status === 404) {
+        document.getElementById("stats").innerText = "Link not found!";
+        return;
+    }
+
     const data = await res.json();
+    const lastClicked = data.last_clicked ? new Date(data.last_clicked).toLocaleString() : "Never";
 
     document.getElementById("stats").innerHTML = `
         <p><b>Short Code:</b> ${data.code}</p>
-        <p><b>Original URL:</b> ${data.target_url}</p>
+        <p><b>Original URL:</b> <a href="${data.target_url}" target="_blank">${data.target_url}</a></p>
         <p><b>Total Clicks:</b> ${data.clicks}</p>
-        <p><b>Last Clicked:</b> ${data.last_clicked ? data.last_clicked : "Never"}</p>
+        <p><b>Last Clicked:</b> ${lastClicked}</p>
         <button onclick="window.location='index.html'">Back</button>
     `;
 }
